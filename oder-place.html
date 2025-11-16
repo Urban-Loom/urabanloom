@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Cart — Urban Loom</title>
+  <link rel="stylesheet" href="cart.css">
+  <link rel="icon" type="image/png" href="favicon.png">
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <h1><a href="index.html">Urban<span>&nbsp;Loom</span></a></h1>
+    </div>
+    <nav class="nav-links">
+      <a href="collection.html">Back</a>
+    </nav>
+    <button class="nav-toggle" id="nav-toggle">☰</button>
+  </header>
+
+  <!-- Cart Section -->
+  <section class="products" style="padding:3rem 1rem;">
+    <div class="container" style="max-width:800px;margin:0 auto;">
+      <h2 style="text-align:center;color:#7B3F00;margin-bottom:2rem;">Your Cart</h2>
+
+      <div id="cart-items">
+        <!-- Cart items will load here -->
+      </div>
+
+      <div id="cart-total" style="text-align:right;font-weight:700;font-size:1.2rem;margin-top:1.5rem;">
+        Total: PKR 0
+      </div>
+    </div>
+  </section>
+
+  <!-- Checkout Form -->
+  <section class="products" style="background:#fff;padding:2rem 1rem;">
+    <div class="container" style="max-width:600px;margin:0 auto;">
+      <h3 style="text-align:center;color:#7B3F00;margin-bottom:1rem;">Checkout Information</h3>
+
+      <form id="checkout-form" style="display:flex;flex-direction:column;gap:1rem;">
+        <input type="text" id="customer-name" placeholder="Full Name" required>
+        <input type="text" id="postal-code" placeholder="Postal Code" required>
+        <input type="text" id="address" placeholder="Address" required>
+        <input type="tel" id="phone" placeholder="Phone Number" required>
+        <input type="email" id="email" placeholder="Email Address" required>
+        <button type="submit" class="btn-royal" style="width:100%;">Place Order</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-bottom">
+      <p>© 2025 Urban Loom. All Rights Reserved.</p>
+    </div>
+  </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Mobile nav toggle
+  const navToggle = document.getElementById('nav-toggle');
+  if(navToggle){
+    navToggle.addEventListener('click', () => {
+      document.querySelector('.nav-links').classList.toggle('active');
+    });
+  }
+
+  const cartContainer = document.getElementById('cart-items');
+  const totalEl = document.getElementById('cart-total');
+
+  let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+  function formatPKR(n){ return 'PKR ' + n.toLocaleString(); }
+
+  function renderCart() {
+    cartContainer.innerHTML = '';
+    if(cart.length === 0){
+      cartContainer.innerHTML = `<p style="text-align:center;">Your cart is empty.</p>`;
+      totalEl.textContent = 'Total: PKR 0';
+      return;
+    }
+
+    let total = 0;
+
+    cart.forEach((item,index)=>{
+      const itemTotal = item.price * item.quantity;
+      total += itemTotal;
+
+      const row = document.createElement('div');
+      row.style.display='flex';
+      row.style.justifyContent='space-between';
+      row.style.alignItems='center';
+      row.style.borderBottom='1px solid #ddd';
+      row.style.padding='1rem 0';
+      row.style.gap='1rem';
+      row.style.flexWrap='wrap';
+
+      const left = document.createElement('div');
+      left.style.display='flex';
+      left.style.alignItems='center';
+      left.style.gap='10px';
+      left.style.flex='1';
+
+      const img = document.createElement('img');
+      img.src = item.image || 'https://via.placeholder.com/80';
+      img.alt = item.name;
+      img.style.width='80px';
+      img.style.height='80px';
+      img.style.objectFit='cover';
+      img.style.borderRadius='8px';
+
+      const name = document.createElement('div');
+      name.style.fontWeight='600';
+      name.textContent = item.name;
+
+      left.appendChild(img);
+      left.appendChild(name);
+
+      const qtyInput = document.createElement('input');
+      qtyInput.type='number';
+      qtyInput.min='1';
+      qtyInput.value=item.quantity;
+      qtyInput.style.width='60px';
+      qtyInput.addEventListener('input',()=>{
+        let q = parseInt(qtyInput.value,10);
+        if(!isFinite(q)||q<1) q=1;
+        cart[index].quantity = q;
+        localStorage.setItem('cart',JSON.stringify(cart));
+        renderCart();
+      });
+
+      const price = document.createElement('div');
+      price.textContent = formatPKR(itemTotal);
+
+      const removeBtn = document.createElement('button');
+      removeBtn.textContent='×';
+      removeBtn.style.background='transparent';
+      removeBtn.style.color='#7B3F00';
+      removeBtn.style.fontSize='1.2rem';
+      removeBtn.style.border='none';
+      removeBtn.style.cursor='pointer';
+      removeBtn.addEventListener('click',()=>{
+        cart.splice(index,1);
+        localStorage.setItem('cart',JSON.stringify(cart));
+        renderCart();
+      });
+
+      row.appendChild(left);
+      row.appendChild(qtyInput);
+      row.appendChild(price);
+      row.appendChild(removeBtn);
+
+      cartContainer.appendChild(row);
+    });
+
+    totalEl.textContent = 'Total: ' + formatPKR(total);
+  }
+
+  renderCart();
+
+  // Checkout Form
+  document.getElementById('checkout-form').addEventListener('submit',(e)=>{
+    e.preventDefault();
+    if(cart.length===0){
+      alert('Your cart is empty!');
+      return;
+    }
+
+    const order = {
+      name: document.getElementById('customer-name').value.trim(),
+      postalCode: document.getElementById('postal-code').value.trim(),
+      address: document.getElementById('address').value.trim(),
+      phone: document.getElementById('phone').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      cart: cart,
+      total: cart.reduce((sum,item)=>sum+item.price*item.quantity,0),
+      date: new Date().toLocaleString()
+    };
+
+    const existingOrders = JSON.parse(localStorage.getItem('orders')) || [];
+    existingOrders.push(order);
+    localStorage.setItem('orders',JSON.stringify(existingOrders));
+
+    localStorage.removeItem('cart');
+    alert('Order placed successfully!');
+    window.location.href='index.html';
+  });
+});
+</script>
+
+</body>
+</html>

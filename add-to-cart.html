@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Add to Cart — Urban Loom</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="favicon.png">
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <h1><a href="index.html">Urban<span>Loom</span></a></h1>
+    </div>
+    <nav class="nav-links">
+      <a href="collection.html">Back</a>
+    </nav>
+    <button class="nav-toggle" id="nav-toggle">☰</button>
+  </header>
+
+  <!-- Product Container -->
+  <section class="products" style="padding:3rem 1rem;">
+    <div class="container" id="product-container" style="max-width:600px;margin:0 auto;">
+      <!-- JS will render the product card here -->
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-bottom">
+      <p>© 2025 Urban Loom. All Rights Reserved.</p>
+    </div>
+  </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Mobile nav toggle
+  const navToggle = document.getElementById('nav-toggle');
+  if (navToggle) {
+    navToggle.addEventListener('click', () => {
+      document.querySelector('.nav-links').classList.toggle('active');
+    });
+  }
+
+  const container = document.getElementById('product-container');
+
+  // Load product from localStorage
+  const productData = localStorage.getItem('selectedProduct');
+  if (!productData) {
+    alert('No product selected!');
+    window.location.href = 'collection.html';
+    return;
+  }
+
+  let product;
+  try {
+    product = JSON.parse(productData);
+  } catch (err) {
+    console.error('Invalid product JSON:', err);
+    alert('Invalid product data');
+    window.location.href = 'collection.html';
+    return;
+  }
+
+  function sanitizePrice(value) {
+    if (typeof value === 'number' && isFinite(value)) return value;
+    if (!value) return 0;
+    const s = String(value).trim();
+    let cleaned = s.replace(/[^\d.,-]/g, '');
+    if (cleaned.indexOf(',') > -1 && cleaned.indexOf('.') > -1) {
+      cleaned = cleaned.replace(/,/g, '');
+    } else {
+      cleaned = cleaned.replace(/,/g, '');
+    }
+    const num = parseFloat(cleaned);
+    return isNaN(num) ? 0 : num;
+  }
+
+  const unitPrice = sanitizePrice(product.price);
+  let quantity = 1;
+
+  function formatNumber(n) {
+    try { return n.toLocaleString(); } catch (e) { return String(n); }
+  }
+
+  function formatPKR(n) { return 'PKR ' + formatNumber(n); }
+
+  function generateId(name) {
+    if (!name) return 'p-' + Date.now();
+    return name.toString().toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w-]/g, '')
+      .substring(0, 64) || ('p-' + Date.now());
+  }
+
+  const productId = product.id || product.sku || generateId(product.name);
+
+  const card = document.createElement('div');
+  card.className = 'product-card zoom-in visible';
+  card.style.textAlign = 'center';
+
+  const img = document.createElement('img');
+  img.src = product.image || 'https://via.placeholder.com/800x600?text=No+Image';
+  img.alt = product.name || 'Product';
+
+  const title = document.createElement('h2');
+  title.style.color = '#7B3F00';
+  title.style.marginTop = '.8rem';
+  title.textContent = product.name || 'Untitled Product';
+
+  const desc = document.createElement('p');
+  desc.style.marginTop = '.4rem';
+  desc.textContent = product.description || '';
+
+  const priceEl = document.createElement('div');
+  priceEl.className = 'price';
+  priceEl.textContent = formatPKR(unitPrice);
+
+  const controls = document.createElement('div');
+  controls.className = 'controls';
+  controls.style.display = 'flex';
+  controls.style.justifyContent = 'center';
+  controls.style.alignItems = 'center';
+  controls.style.gap = '10px';
+  controls.style.margin = '1rem 0';
+
+  const minusBtn = document.createElement('button');
+  minusBtn.type = 'button';
+  minusBtn.className = 'btn-outline small';
+  minusBtn.textContent = '−';
+
+  const qtyInput = document.createElement('input');
+  qtyInput.type = 'number';
+  qtyInput.min = '1';
+  qtyInput.value = String(quantity);
+  qtyInput.style.width = '70px';
+  qtyInput.style.textAlign = 'center';
+  qtyInput.style.padding = '6px';
+  qtyInput.style.borderRadius = '6px';
+  qtyInput.style.border = '1px solid #ccc';
+
+  const plusBtn = document.createElement('button');
+  plusBtn.type = 'button';
+  plusBtn.className = 'btn-outline small';
+  plusBtn.textContent = '+';
+
+  controls.appendChild(minusBtn);
+  controls.appendChild(qtyInput);
+  controls.appendChild(plusBtn);
+
+  const totalEl = document.createElement('div');
+  totalEl.id = 'cart-summary';
+  totalEl.style.fontWeight = '600';
+  totalEl.style.marginTop = '1rem';
+  totalEl.textContent = 'Total: ' + formatPKR(unitPrice * quantity);
+
+  const addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.className = 'btn-royal';
+  addBtn.style.width = '100%';
+  addBtn.style.marginTop = '1rem';
+  addBtn.textContent = 'Add to Cart';
+
+  card.appendChild(img);
+  card.appendChild(title);
+  card.appendChild(desc);
+  card.appendChild(priceEl);
+  card.appendChild(controls);
+  card.appendChild(totalEl);
+  card.appendChild(addBtn);
+
+  container.appendChild(card);
+
+  function updateQuantity(newQty) {
+    let q = parseInt(newQty, 10);
+    if (!isFinite(q) || q < 1) q = 1;
+    quantity = q;
+    qtyInput.value = String(quantity);
+    totalEl.textContent = 'Total: ' + formatPKR(unitPrice * quantity);
+  }
+
+  minusBtn.addEventListener('click', () => updateQuantity(quantity - 1));
+  plusBtn.addEventListener('click', () => updateQuantity(quantity + 1));
+  qtyInput.addEventListener('input', () => {
+    let v = qtyInput.value;
+    if (v === '' || v === null) return;
+    updateQuantity(v);
+  });
+  qtyInput.addEventListener('blur', () => {
+    if (qtyInput.value === '' || parseInt(qtyInput.value, 10) < 1) updateQuantity(1);
+  });
+
+  addBtn.addEventListener('click', () => {
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    const existing = cart.find(item => item.id === productId);
+    if (existing) {
+      existing.quantity = (existing.quantity || 0) + quantity;
+    } else {
+      cart.push({
+        id: productId,
+        name: product.name || '',
+        image: product.image || '',
+        price: unitPrice,
+        quantity: quantity
+      });
+    }
+    localStorage.setItem('cart', JSON.stringify(cart));
+    window.location.href = 'oder-place.html';
+  });
+});
+</script>
+
+</body>
+</html>

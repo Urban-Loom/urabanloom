@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Urban Loom — Admin Dashboard</title>
+  <link rel="stylesheet" href="cart.css">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <style>
+    .orders-container { max-width: 900px; margin: 2rem auto; padding: 1rem; background:#fff; border-radius:10px; }
+    .order-card { border:1px solid #ddd; padding:1rem; border-radius:8px; margin-bottom:1.5rem; position:relative; }
+    .order-header { display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; }
+    .order-header h4 { margin-bottom:0.5rem; color:#7B3F00; }
+    .order-items { margin-top:1rem; border-top:1px solid #ddd; padding-top:0.5rem; }
+    .order-item { display:flex; justify-content:space-between; align-items:center; margin:0.5rem 0; gap:1rem; flex-wrap:wrap; }
+    .order-item img { width:60px; height:60px; object-fit:cover; border-radius:6px; }
+    .no-orders { text-align:center; padding:2rem; font-weight:600; color:#7B3F00; }
+    .delete-order { position:absolute; top:1rem; right:1rem; background:#d2691e; color:#fff; border:none; padding:0.5rem 1rem; border-radius:6px; cursor:pointer; }
+    .delete-order:hover { background:#7B3F00; }
+    header { display:flex; justify-content:space-between; align-items:center; padding:1rem; background:#f9f5f0; }
+    .logo h1 { font-family:'Playfair Display',serif; color:#7B3F00; font-size:1.5rem; }
+    .logo span { color:#d2691e; }
+    .nav-links a { text-decoration:none; color:#7B3F00; margin-left:1rem; font-weight:600; }
+    .nav-toggle { background:none; border:none; font-size:1.5rem; cursor:pointer; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <h1><a href="index.html">Urban<span>Loom</span></a></h1>
+    </div>
+    <nav class="nav-links">
+      <a href="index.html">Home</a>
+    </nav>
+    <button class="nav-toggle" id="nav-toggle">☰</button>
+  </header>
+
+  <section class="products" style="padding:3rem 1rem;">
+    <div class="orders-container" id="orders-container">
+      <h2 style="text-align:center;color:#7B3F00;margin-bottom:2rem;">All Orders</h2>
+    </div>
+  </section>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Toggle nav for mobile
+      const navToggle = document.getElementById('nav-toggle');
+      if(navToggle){
+        navToggle.addEventListener('click', () => {
+          document.querySelector('.nav-links').classList.toggle('active');
+        });
+      }
+
+      const ordersContainer = document.getElementById('orders-container');
+      let orders = JSON.parse(localStorage.getItem('orders')) || [];
+
+      function renderOrders() {
+        ordersContainer.innerHTML = `<h2 style="text-align:center;color:#7B3F00;margin-bottom:2rem;">All Orders</h2>`;
+
+        if(orders.length === 0){
+          ordersContainer.innerHTML += `<p class="no-orders">No orders have been placed yet.</p>`;
+          return;
+        }
+
+        orders.forEach((order, index) => {
+          const card = document.createElement('div');
+          card.classList.add('order-card');
+
+          // Delete button
+          const deleteBtn = document.createElement('button');
+          deleteBtn.classList.add('delete-order');
+          deleteBtn.textContent = 'Delete Order';
+          deleteBtn.addEventListener('click', () => {
+            if(confirm(`Delete Order #${index+1}?`)){
+              orders.splice(index,1);
+              localStorage.setItem('orders', JSON.stringify(orders));
+              renderOrders();
+            }
+          });
+          card.appendChild(deleteBtn);
+
+          // Header: Customer info
+          const header = document.createElement('div');
+          header.classList.add('order-header');
+
+          const custInfo = document.createElement('div');
+          custInfo.innerHTML = `
+            <h4>Order #${index + 1}</h4>
+            <p><strong>Name:</strong> ${order.name}</p>
+            <p><strong>Postal Code:</strong> ${order.postalCode}</p>
+            <p><strong>Address:</strong> ${order.address}</p>
+            <p><strong>Phone:</strong> ${order.phone}</p>
+            <p><strong>Email:</strong> ${order.email}</p>
+            <p><strong>Date:</strong> ${order.date}</p>
+          `;
+
+          const totalInfo = document.createElement('div');
+          totalInfo.innerHTML = `<h4>Total: PKR ${order.total.toLocaleString()}</h4>`;
+
+          header.appendChild(custInfo);
+          header.appendChild(totalInfo);
+          card.appendChild(header);
+
+          // Ordered items
+          const itemsContainer = document.createElement('div');
+          itemsContainer.classList.add('order-items');
+
+          order.cart.forEach(item => {
+            const itemRow = document.createElement('div');
+            itemRow.classList.add('order-item');
+
+            const left = document.createElement('div');
+            left.style.display = 'flex';
+            left.style.alignItems = 'center';
+            left.style.gap = '10px';
+
+            const img = document.createElement('img');
+            img.src = item.image || 'https://via.placeholder.com/60';
+            img.alt = item.name;
+
+            const name = document.createElement('span');
+            name.textContent = item.name;
+
+            left.appendChild(img);
+            left.appendChild(name);
+
+            const qty = document.createElement('span');
+            qty.textContent = `Qty: ${item.quantity}`;
+
+            const price = document.createElement('span');
+            price.textContent = `PKR ${(item.price * item.quantity).toLocaleString()}`;
+
+            itemRow.appendChild(left);
+            itemRow.appendChild(qty);
+            itemRow.appendChild(price);
+
+            itemsContainer.appendChild(itemRow);
+          });
+
+          card.appendChild(itemsContainer);
+          ordersContainer.appendChild(card);
+        });
+      }
+
+      renderOrders();
+
+    });
+  </script>
+
+</body>
+</html>
